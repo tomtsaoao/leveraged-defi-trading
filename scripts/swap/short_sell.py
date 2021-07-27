@@ -15,7 +15,6 @@ from ...scripts.swap.swap import swap
 amount = Web3.toWei(0.1, "ether")
 
 def main():
-    # Pull in accounts
     account = accounts[0]
     # Get WETH, DAI, Uniswap address from brownie-config - different networks, differrent addresses
     weth_address = config["networks"][network.show_active()]["weth_token"]
