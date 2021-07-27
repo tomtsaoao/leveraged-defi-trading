@@ -7,38 +7,6 @@ from chainlink_mapping import price_feed_mapping
 
 amount_to_swap = Web3.toWei(0.1, "ether")
 
-
-def main():
-    account = accounts[0]
-    weth_address = config["networks"][network.show_active()]["weth_token"]
-    dai_address = config["networks"][network.show_active()]["aave_dai_token"]
-    sushiswap02_router02 = config["networks"][network.show_active()][
-        "sushiswapv2_router02"
-    ]
-    print(
-        f"The starting balance of DAI in {account.address} is now {interface.IERC20(dai_address).balanceOf(account.address)}"
-    )
-    if network.show_active() in ["mainnet-fork"]:
-        get_weth(account=account)
-    tx = approve_erc20(amount_to_swap, sushiswap02_router02, weth_address, account)
-    tx.wait(1)
-    price_feed_address = price_feed_mapping[network.show_active()][
-        (dai_address, weth_address)
-    ]
-    swap(
-        weth_address,
-        dai_address,
-        amount_to_swap,
-        account,
-        price_feed_address,
-        sushiswap02_router02,
-        reverse_feed=True,
-    )
-    print(
-        f"The ending balance of DAI in {account.address} is now {interface.IERC20(dai_address).balanceOf(account.address)}"
-    )
-
-
 def swap(
     address_from_token,
     address_to_token,
@@ -60,9 +28,15 @@ def swap(
     # 98 is 2% slippage
     # I get a little weird with units here
     # from_to_price isn't in wei, but amount is
+    # someone could front-run and buy a lot of WETH - and sell it back to us for a profit
+    # which is why we have amountOutMin
+    # Worst case 0.90 means 10% slippage
     amountOutMin = int((from_to_price * 0.90) * amount)
+    # give expiry time (120 seconds from now)
     timestamp = chain[brownie.web3.eth.get_block_number()]["timestamp"] + 120
+    # every time interact with contract - need ABI and Address - interface compiles to ABI
     routerv2 = interface.IUniswapV2Router02(swap_router_address)
+    # Call the swap function from Uniswap contract
     swap_tx = routerv2.swapExactTokensForTokens(
         amount, amountOutMin, path, account.address, timestamp, {"from": account}
     )

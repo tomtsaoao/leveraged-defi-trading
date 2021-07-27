@@ -1,7 +1,6 @@
-# get WETH
 # deposit WETH into aave
-# use WETH to borrown dai
-# sell the dai for more WETH
+# use WETH to borrown DAI
+# sell the DAI for more WETH
 
 from scripts.chainlink.chainlink import get_asset_price
 from web3.main import Web3
@@ -12,16 +11,18 @@ from web3 import Web3
 from ...scripts.chainlink.chainlink import get_asset_price
 from ...scripts.swap.swap import swap
 
+# 0.1 ETH in Wei
 amount = Web3.toWei(0.1, "ether")
 
 def main():
+    # Pull in accounts
     account = accounts[0]
+    # Get WETH, DAI, Uniswap address from brownie-config - different networks, differrent addresses
     weth_address = config["networks"][network.show_active()]["weth_token"]
     dai_address = config["networks"][network.show_active()]["dai_token"]
-    sushiswapv2_router02 = config["networks"][network.show_active()]["sushiswapv2_router02"]
+    uniswapv2_router02 = config["networks"][network.show_active()]["uniswapv2_router02"]
     get_weth(account=account)
 
-    # AAVE related
     lending_pool = get_lending_pool()
     approve_erc20(amount, lending_pool.address, weth_address, account)
     print("Depositing...")
@@ -32,7 +33,11 @@ def main():
     tx.wait(1)
     borrowable_eth, total_debt_eth = get_borrowable_data(lending_pool, account)
 
-    #Aave Borrow some DAI
+    # Aave Borrow some DAI
+    # Call get asset price from chainlink - use to figure out how much can borrow
+    # every 1 dai = dai_eth_price ETH
+    # every 1 ETH == x dai
+    # 0.95 so we stay within healthy threshold
     dai_eth_price = get_asset_price()
     amount_dai_to_borrow = (1 / dai_eth_price) * (borrowable_eth * 0.95)
     borrow_erc20(lending_pool, amount_dai_to_borrow, account, erc20_address=dai_address)
@@ -40,7 +45,7 @@ def main():
     # Short sell / Buy on margin
     amount_dai_to_borrow = Web3.toWei(amount_dai_to_borrow, "ether")
     tx_approve = approve_erc20(
-        amount_dai_to_borrow, sushiswapv2_router02, dai_address, account
+        amount_dai_to_borrow, uniswapv2_router02, dai_address, account
     )
     tx_approve.wait(1)
     price_feed_address = config["networks"][network.show_active()]["dai_eth_price_feed"]
@@ -50,7 +55,7 @@ def main():
         amount_dai_to_borrow - Web3.toWei(1, "ether"),
         account,
         price_feed_address,
-        sushiswapv2_router02
+        uniswapv2_router02
     )
     print(
         f"Ending WETH Balance is: {interface.IERC20(weth_address).balanceOf(account.address)}"

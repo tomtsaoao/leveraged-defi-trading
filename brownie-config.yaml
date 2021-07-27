@@ -24,6 +24,8 @@ networks:
     weth_token: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
     sushiswapv2_router02: '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
     uniswapv2_router02: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+    comptroller: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b'
+    cDai: '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'
     # For mainnet, the link token is the same
     link_token: '0x514910771af9ca656af840dff83e8264ecf986ca'
     aave_link_token: '0x514910771af9ca656af840dff83e8264ecf986ca'

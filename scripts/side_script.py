@@ -8,6 +8,7 @@ def get_weth(account=None):
         account if account else accounts[0]
     )
     weth = interface.IWeth(config["networks"][network.show_active()]["weth_token"])
+    # Call deposit function from WETH contract
     tx = weth.deposit({"from": account, "value": 1000000000000000000})
     print("Received 1 WETH")
     return tx
